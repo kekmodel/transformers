@@ -221,8 +221,9 @@ class Attention(nn.Module):
         if cache is not None:
             k, v = cache.update(self.layer_idx, k, v)
 
-        k = k.repeat_interleave(self.num_kv_groups, dim=1)
-        v = v.repeat_interleave(self.num_kv_groups, dim=1)
+        B, Kh, L_kv, D = k.shape
+        k = k[:, :, None, :, :].expand(B, Kh, self.num_kv_groups, L_kv, D).reshape(B, -1, L_kv, D)
+        v = v[:, :, None, :, :].expand(B, Kh, self.num_kv_groups, L_kv, D).reshape(B, -1, L_kv, D)
 
         attn = (q @ k.transpose(-2, -1)) * self.scaling
         if mask is not None:
